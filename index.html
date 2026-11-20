@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Lens — Instant Interactive Dictionary</title>
+
+  <!-- Early theme restoration to avoid light/dark flash on load -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('word_lens_theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Newsreader (Editorial Serif) & Inter (Clean UI Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+
+  <!-- Theme Custom Properties (Light Editorial Paper & Low-Glare Grey-ish Dark Mode) -->
+  <style>
+    :root {
+      --rgb-paper: 250 247 242;          /* #FAF7F2 */
+      --rgb-card: 255 255 255;           /* #FFFFFF */
+      --rgb-popover: 255 255 255;        /* #FFFFFF */
+      --rgb-border: 234 228 218;         /* #EAE4DA */
+      --rgb-border-strong: 222 215 204;  /* #DED7CC */
+      --rgb-border-soft: 239 236 230;    /* #EFECE6 */
+      --rgb-quote-border: 221 214 203;   /* #DDD6CB */
+      --rgb-ink: 29 27 24;               /* #1D1B18 */
+      --rgb-secondary: 92 86 79;         /* #5C564F */
+      --rgb-muted: 107 101 94;           /* #6B655E */
+      --rgb-terracotta: 194 73 20;       /* #C24914 */
+      --rgb-terracotta-hover: 166 59 14; /* #A63B0E */
+      --rgb-on-terracotta: 255 255 255;  /* #FFFFFF */
+      --rgb-btn-dark: 29 27 24;          /* #1D1B18 */
+      --rgb-btn-dark-hover: 51 48 43;    /* #33302B */
+      --rgb-on-btn-dark: 255 255 255;    /* #FFFFFF */
+      --rgb-beige: 244 241 234;          /* #F4F1EA */
+      --rgb-beige-hover: 234 228 217;    /* #EAE4D9 */
+      --rgb-input-focus: 247 244 238;    /* #F7F4EE */
+      --rgb-pill-text: 74 69 63;         /* #4A453F */
+      --rgb-amber-highlight: 252 228 176;/* #FCE4B0 */
+      --rgb-amber-stroke: 217 130 43;    /* #D9822B */
+      --rgb-shimmer-mid: 233 227 216;    /* #E9E3D8 */
+      --rgb-backdrop: 29 27 24;
+      --shadow-card: 0 1px 3px rgba(29, 27, 24, 0.04), 0 1px 2px rgba(29, 27, 24, 0.02);
+      --shadow-popover: 0 18px 42px -10px rgba(29, 27, 24, 0.14), 0 6px 16px -4px rgba(29, 27, 24, 0.07);
+      --shadow-drawer: -12px 0 40px rgba(29, 27, 24, 0.12);
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --rgb-paper: 20 20 19;             /* #141413 — Deep matte charcoal */
+      --rgb-card: 28 28 26;              /* #1C1C1A — Elevated dark card */
+      --rgb-popover: 35 35 32;           /* #232320 — Popover / modal surface */
+      --rgb-border: 46 46 43;            /* #2E2E2B — Subtle border */
+      --rgb-border-strong: 60 60 55;     /* #3C3C37 — Input / button border */
+      --rgb-border-soft: 43 43 40;       /* #2B2B28 — Inner divider */
+      --rgb-quote-border: 66 65 59;      /* #42413B — Example quote rule */
+      --rgb-ink: 184 184 179;            /* #B8B8B3 — Primary grey-ish reading & heading text */
+      --rgb-secondary: 142 142 136;      /* #8E8E88 — Softer grey descriptions */
+      --rgb-muted: 112 112 106;          /* #70706A — Dimmer grey labels & phonetics */
+      --rgb-terracotta: 201 91 43;       /* #C95B2B — Muted terracotta */
+      --rgb-terracotta-hover: 181 78 34; /* #B54E22 — Muted terracotta hover */
+      --rgb-on-terracotta: 220 220 215;  /* #DCDCD7 — Soft light grey on terracotta */
+      --rgb-btn-dark: 48 48 44;          /* #30302C — Save button surface */
+      --rgb-btn-dark-hover: 60 60 55;    /* #3C3C37 — Save button hover */
+      --rgb-on-btn-dark: 200 200 195;    /* #C8C8C3 — Soft grey button label */
+      --rgb-beige: 37 37 34;             /* #252522 — Textarea & pill background */
+      --rgb-beige-hover: 49 49 45;       /* #31312D — Pill & button hover */
+      --rgb-input-focus: 41 41 38;       /* #292926 — Focused textarea */
+      --rgb-pill-text: 162 162 156;      /* #A2A29C — Synonym pill grey text */
+      --rgb-amber-highlight: 74 58 30;   /* #4A3A1E — Warm muted ochre highlight */
+      --rgb-amber-stroke: 214 195 154;   /* #D6C39A — Warm ochre accent underline */
+      --rgb-shimmer-mid: 52 52 48;       /* #343430 — Dark shimmer tone */
+      --rgb-backdrop: 8 8 7;
+      --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.36), 0 1px 2px rgba(0, 0, 0, 0.24);
+      --shadow-popover: 0 22px 48px -10px rgba(0, 0, 0, 0.65), 0 8px 20px -4px rgba(0, 0, 0, 0.45);
+      --shadow-drawer: -12px 0 44px rgba(0, 0, 0, 0.58);
+      color-scheme: dark;
+    }
+
+    /* Smooth theme transitions across surfaces and text */
+    body,
+    section,
+    header,
+    aside,
+    textarea,
+    input,
+    button,
+    a,
+    #definition-popover,
+    #popover-caret,
+    #full-entry-panel {
+      transition-property: background-color, border-color, color, box-shadow;
+      transition-duration: 200ms;
+      transition-timing-function: ease-out;
+    }
+  </style>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Design Tokens Configuration (Mapped to Theme CSS Variables) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: 'rgb(var(--rgb-paper) / <alpha-value>)',
+            card: 'rgb(var(--rgb-card) / <alpha-value>)',
+            popover: 'rgb(var(--rgb-popover) / <alpha-value>)',
+            borderWarm: 'rgb(var(--rgb-border) / <alpha-value>)',
+            borderStrong: 'rgb(var(--rgb-border-strong) / <alpha-value>)',
+            borderSoft: 'rgb(var(--rgb-border-soft) / <alpha-value>)',
+            quoteBorder: 'rgb(var(--rgb-quote-border) / <alpha-value>)',
+            ink: 'rgb(var(--rgb-ink) / <alpha-value>)',
+            secondary: 'rgb(var(--rgb-secondary) / <alpha-value>)',
+            muted: 'rgb(var(--rgb-muted) / <alpha-value>)',
+            terracotta: 'rgb(var(--rgb-terracotta) / <alpha-value>)',
+            terracottaHover: 'rgb(var(--rgb-terracotta-hover) / <alpha-value>)',
+            onTerracotta: 'rgb(var(--rgb-on-terracotta) / <alpha-value>)',
+            btnDark: 'rgb(var(--rgb-btn-dark) / <alpha-value>)',
+            btnDarkHover: 'rgb(var(--rgb-btn-dark-hover) / <alpha-value>)',
+            onBtnDark: 'rgb(var(--rgb-on-btn-dark) / <alpha-value>)',
+            beige: 'rgb(var(--rgb-beige) / <alpha-value>)',
+            beigeHover: 'rgb(var(--rgb-beige-hover) / <alpha-value>)',
+            inputFocus: 'rgb(var(--rgb-input-focus) / <alpha-value>)',
+            pillText: 'rgb(var(--rgb-pill-text) / <alpha-value>)',
+            amberHighlight: 'rgb(var(--rgb-amber-highlight) / <alpha-value>)',
+            amberStroke: 'rgb(var(--rgb-amber-stroke) / <alpha-value>)',
+            shimmerMid: 'rgb(var(--rgb-shimmer-mid) / <alpha-value>)',
+            backdrop: 'rgb(var(--rgb-backdrop) / <alpha-value>)',
+          },
+          fontFamily: {
+            serif: ['Newsreader', 'Georgia', 'Cambria', 'serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          boxShadow: {
+            card: 'var(--shadow-card)',
+            popover: 'var(--shadow-popover)',
+            drawer: 'var(--shadow-drawer)',
+          },
+          keyframes: {
+            popIn: {
+              '0%': { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
+              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            },
+            soundPulse: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.12)' },
+            },
+          },
+          animation: {
+            popIn: 'popIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            fadeIn: 'fadeIn 180ms ease-out forwards',
+            shimmer: 'shimmer 1.6s linear infinite',
+            soundPulse: 'soundPulse 650ms ease-in-out infinite',
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-paper text-ink font-sans antialiased selection:bg-amberHighlight selection:text-ink min-h-screen flex flex-col">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="w-full max-w-[920px] mx-auto px-5 sm:px-8 pt-6 pb-4 flex items-center justify-between gap-3">
+    <!-- Brand Mark -->
+    <a href="#" class="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 rounded-lg py-1 pr-2 shrink-0">
+      <svg class="w-5 h-5 text-terracotta transition-transform duration-200 group-hover:scale-105" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7.5"></circle>
+        <path d="M20 20l-3.6-3.6"></path>
+      </svg>
+      <span class="font-serif font-semibold text-[21px] tracking-[-0.015em] text-ink">Word Lens</span>
+    </a>
+
+    <!-- Minimal Navigation (No Sign in / Sign up; includes sleek Dark Mode toggle) -->
+    <nav class="flex items-center gap-3.5 sm:gap-6" aria-label="Primary Navigation">
+      <a href="#how-it-works" class="text-[13.5px] font-medium text-secondary hover:text-ink py-2 whitespace-nowrap">
+        How it works
+      </a>
+
+      <button
+        id="open-saved-btn"
+        type="button"
+        class="inline-flex items-center gap-2 text-[13.5px] font-medium text-secondary hover:text-ink py-2 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 rounded-lg cursor-pointer"
+        aria-label="Open saved words"
+      >
+        <span>Saved words</span>
+        <span
+          id="saved-count-badge"
+          class="hidden items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-semibold rounded-full bg-terracotta text-onTerracotta"
+        >0</span>
+      </button>
+
+      <!-- Sleek Dark Mode Toggle Button -->
+      <button
+        id="theme-toggle-btn"
+        type="button"
+        class="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-full bg-beige hover:bg-beigeHover border border-borderWarm text-secondary hover:text-ink text-[12.5px] font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 shrink-0"
+        aria-label="Switch to dark mode"
+        aria-pressed="false"
+        title="Toggle dark mode"
+      >
+        <!-- Moon Icon (shown in Light Mode) -->
+        <svg id="theme-icon-moon" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+        <!-- Sun Icon (shown in Dark Mode) -->
+        <svg id="theme-icon-sun" class="hidden w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.41 1.41"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m6.34 17.66-1.41 1.41"></path>
+          <path d="m19.07 4.93-1.41 1.41"></path>
+        </svg>
+        <span id="theme-toggle-label" class="hidden sm:inline">Dark</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-1 w-full max-w-[920px] mx-auto px-5 sm:px-8 pt-7 sm:pt-12 pb-16">
+
+    <!-- Hero Section -->
+    <section class="max-w-[660px] mb-9 sm:mb-11">
+      <h1 class="font-serif font-normal text-[40px] sm:text-[54px] leading-[1.08] tracking-[-0.025em] text-ink">
+        Paste a paragraph. Tap any word. Understand it instantly.
+      </h1>
+      <p class="mt-4 text-[15px] sm:text-[16px] leading-[1.6] text-secondary max-w-[540px]">
+        No tabs, no dictionary hunting. Every word in your text becomes a button that opens its meaning right where you are reading.
+      </p>
+    </section>
+
+    <!-- Paragraph Input Card -->
+    <section aria-label="Paragraph input" class="bg-card border border-borderWarm rounded-2xl shadow-card p-5 sm:p-6 mb-6">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <label for="paragraph-input" class="text-[11px] font-semibold uppercase tracking-[0.09em] text-muted">
+          Your paragraph
+        </label>
+        <div class="flex items-center gap-3 text-[12px]">
+          <button
+            id="load-sample-btn"
+            type="button"
+            class="text-muted hover:text-terracotta py-1 px-1.5 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 cursor-pointer"
+            title="Cycle through sample literary paragraphs"
+          >
+            Sample
+          </button>
+          <span class="text-borderStrong select-none">·</span>
+          <button
+            id="clear-input-btn"
+            type="button"
+            class="text-muted hover:text-ink py-1 px-1.5 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <textarea
+          id="paragraph-input"
+          rows="3"
+          placeholder="Paste or type any paragraph from an article, book, or email..."
+          class="w-full flex-1 bg-beige/90 hover:bg-beige focus:bg-inputFocus border border-borderStrong focus:border-terracotta/55 focus:ring-2 focus:ring-terracotta/15 rounded-xl px-4 py-3.5 text-[14.5px] leading-[1.6] text-ink placeholder:text-muted/75 resize-y min-h-[88px] outline-none"
+        >Morning fog is ephemeral. By the time the kettle boils, the valley has already shed it, leaving only wet grass and the quiet certainty that something beautiful was here.</textarea>
+
+        <button
+          id="make-clickable-btn"
+          type="button"
+          class="inline-flex items-center justify-center gap-2 bg-terracotta hover:bg-terracottaHover active:scale-[0.99] text-onTerracotta font-medium text-[14px] px-5 py-3.5 rounded-xl shadow-sm whitespace-nowrap shrink-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:ring-terracotta"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+          <span>Make it clickable</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Interactive Reading Card -->
+    <section aria-label="Interactive reading area" class="relative bg-card border border-borderWarm rounded-2xl shadow-card px-6 py-7 sm:px-10 sm:py-10 mb-14 sm:mb-16">
+      <div class="flex items-center justify-between gap-3 mb-5">
+        <div class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.09em] text-muted">
+          <svg class="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4l7.07 17 2.51-7.39L21 11.07z"></path>
+          </svg>
+          <span>Tap any word</span>
+        </div>
+        <span id="word-count-meta" class="text-[11.5px] text-muted"></span>
+      </div>
+
+      <!-- Tokenized Interactive Paragraph Container -->
+      <div
+        id="reading-surface"
+        class="font-serif text-[23px] sm:text-[27px] leading-[1.74] text-ink tracking-[-0.005em] break-words min-h-[120px]"
+        role="region"
+        aria-label="Clickable paragraph text"
+      ></div>
+    </section>
+
+    <!-- Bottom 3-Step "How it works" Section -->
+    <section id="how-it-works" class="pt-4 sm:pt-6 pb-8 border-t border-borderWarm">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 pt-8">
+        <!-- Step 1 -->
+        <div>
+          <div class="font-serif text-[34px] leading-none text-terracotta mb-2.5">1</div>
+          <h2 class="text-[15px] font-semibold text-ink mb-1.5">Paste</h2>
+          <p class="text-[13.5px] leading-[1.6] text-secondary">
+            Drop in any paragraph from an article, book or email.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div>
+          <div class="font-serif text-[34px] leading-none text-terracotta mb-2.5">2</div>
+          <h2 class="text-[15px] font-semibold text-ink mb-1.5">Tap</h2>
+          <p class="text-[13.5px] leading-[1.6] text-secondary">
+            Click any word. A card appears next to it with no loading.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div>
+          <div class="font-serif text-[34px] leading-none text-terracotta mb-2.5">3</div>
+          <h2 class="text-[15px] font-semibold text-ink mb-1.5">Keep</h2>
+          <p class="text-[13.5px] leading-[1.6] text-secondary">
+            Save the words you want to remember and review them later.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== FLOATING DEFINITION POPOVER ==================== -->
+  <div
+    id="definition-popover"
+    role="dialog"
+    aria-modal="false"
+    aria-label="Word definition card"
+    class="hidden absolute z-40 w-[336px] sm:w-[360px] max-w-[calc(100vw-24px)] bg-popover border border-borderStrong rounded-2xl shadow-popover p-5 animate-popIn"
+  >
+    <!-- Caret Arrow Indicator (positioned dynamically via JS) -->
+    <div
+      id="popover-caret"
+      class="absolute w-3.5 h-3.5 bg-popover border-borderStrong rotate-45 pointer-events-none"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Popover Dynamic Content Container -->
+    <div id="popover-content"></div>
+  </div>
+
+  <!-- ==================== FULL ENTRY MODAL ==================== -->
+  <div
+    id="full-entry-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-word-title"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-backdrop/50 backdrop-blur-[2px] animate-fadeIn"
+  >
+    <div
+      id="full-entry-panel"
+      class="relative w-full max-w-[580px] max-h-[86vh] bg-popover border border-borderWarm rounded-2xl shadow-popover flex flex-col overflow-hidden animate-popIn"
+    >
+      <!-- Modal Sticky Header -->
+      <div class="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-borderWarm bg-popover">
+        <div class="min-w-0">
+          <div class="flex items-center flex-wrap gap-2.5">
+            <h2 id="modal-word-title" class="font-serif text-[32px] font-semibold leading-tight text-ink break-words"></h2>
+            <span id="modal-source-badge" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-secondary bg-beige px-2.5 py-1 rounded-full border border-borderWarm">
+              <svg class="w-3 h-3 text-terracotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7.5"></circle>
+                <path d="M20 20l-3.6-3.6"></path>
+              </svg>
+              <span>Source: Google</span>
+            </span>
+          </div>
+          <p id="modal-phonetic-line" class="text-[13.5px] text-muted mt-1"></p>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            id="modal-audio-btn"
+            type="button"
+            class="w-10 h-10 rounded-full bg-beige hover:bg-beigeHover text-ink flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+            aria-label="Listen to pronunciation"
+            title="Listen to pronunciation"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+          </button>
+          <button
+            id="close-modal-btn"
+            type="button"
+            class="w-10 h-10 rounded-full hover:bg-beige text-muted hover:text-ink flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+            aria-label="Close full entry"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Scrollable Body -->
+      <div id="modal-body" class="flex-1 overflow-y-auto px-6 py-5 space-y-6"></div>
+
+      <!-- Modal Footer -->
+      <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-borderWarm bg-card/70">
+        <button
+          id="modal-save-btn"
+          type="button"
+          class="inline-flex items-center justify-center gap-2 bg-btnDark hover:bg-btnDarkHover text-onBtnDark border border-borderStrong/40 text-[13px] font-medium px-4 py-2.5 rounded-xl cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+        >
+          Save word
+        </button>
+
+        <a
+          id="modal-google-link"
+          href="https://www.google.com/search?q=define"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 text-[13px] font-medium text-terracotta hover:text-terracottaHover underline underline-offset-4 py-1"
+        >
+          <span>Search on Google</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SAVED WORDS SLIDE-OVER DRAWER ==================== -->
+  <div
+    id="saved-drawer-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="drawer-title"
+    class="hidden fixed inset-0 z-50 bg-backdrop/45 backdrop-blur-[2px] animate-fadeIn"
+  >
+    <aside
+      id="saved-drawer-panel"
+      class="fixed top-0 right-0 h-full w-full max-w-[420px] bg-paper border-l border-borderWarm shadow-drawer flex flex-col translate-x-full transition-transform duration-200 ease-out"
+    >
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between gap-3 px-6 py-5 bg-card border-b border-borderWarm">
+        <div>
+          <h2 id="drawer-title" class="font-serif text-[24px] font-semibold text-ink leading-tight">
+            Saved words
+          </h2>
+          <p id="drawer-subtitle" class="text-[12.5px] text-muted mt-0.5">0 words saved</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Two-step inline Clear All confirmation (no alert/confirm) -->
+          <button
+            id="drawer-clear-all-btn"
+            type="button"
+            class="hidden text-[12px] font-medium text-muted hover:text-terracotta px-2.5 py-1.5 rounded-lg hover:bg-beige cursor-pointer"
+          >
+            Clear all
+          </button>
+          <button
+            id="close-drawer-btn"
+            type="button"
+            class="w-9 h-9 rounded-full hover:bg-beige text-muted hover:text-ink flex items-center justify-center cursor-pointer"
+            aria-label="Close saved words drawer"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Optional Search Box inside Drawer (shown when >= 3 saved words) -->
+      <div id="drawer-search-wrap" class="hidden px-5 pt-4 pb-1">
+        <div class="relative">
+          <svg class="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7.5"></circle>
+            <path d="M20 20l-3.6-3.6"></path>
+          </svg>
+          <input
+            id="drawer-search-input"
+            type="text"
+            placeholder="Filter saved words..."
+            class="w-full bg-card border border-borderWarm rounded-xl pl-10 pr-3.5 py-2 text-[13.5px] text-ink placeholder:text-muted/80 outline-none focus:border-terracotta/55 focus:ring-2 focus:ring-terracotta/15"
+          />
+        </div>
+      </div>
+
+      <!-- Drawer Word List Container -->
+      <div id="drawer-list" class="flex-1 overflow-y-auto px-5 py-5 space-y-3.5"></div>
+    </aside>
+  </div>
+
+  <!-- ==================== SUBTLE TOAST FEEDBACK ==================== -->
+  <div
+    id="toast-container"
+    aria-live="polite"
+    class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] pointer-events-none flex flex-col items-center gap-2"
+  ></div>
+
+  <!-- ==================== APPLICATION LOGIC ==================== -->
+  <script>
+    (() => {
+      'use strict';
+
+      // =========================================================================
+      // 1. CONFIGURATION & STATE
+      // =========================================================================
+      const GEMINI_API_KEY = ''; // Runtime-provided when left empty
+      const GEMINI_MODEL = 'gemini-3-flash-preview';
+      const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+      const FREE_DICT_ENDPOINT = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+      const STORAGE_KEY = 'word_lens_saved_words_v1';
+      const THEME_STORAGE_KEY = 'word_lens_theme';
+
+      // Literary sample paragraphs for the subtle "Sample" switcher
+      const SAMPLE_PARAGRAPHS = [
+        'Morning fog is ephemeral. By the time the kettle boils, the valley has already shed it, leaving only wet grass and the quiet certainty that something beautiful was here.',
+        'The antique bookshop smelled of cedar and petrichor. Between weathered folios lay a palimpsest of marginalia—pencil notes left by readers whose names had long since faded into anonymity.',
+        'A lucid essay does not announce its brilliance with bombast; instead, it moves with quiet economy, pairing perspicuous reasoning with the unexpected grace of a well-chosen verb.'
+      ];
+      let sampleIndex = 0;
+
+      // In-memory definition cache: key -> EntryObject
+      const definitionCache = new Map();
+
+      // Active UI state
+      const state = {
+        theme: 'light',            // 'light' | 'dark'
+        activeWordEl: null,        // Currently highlighted DOM span
+        activeWordOriginal: null,  // Word from paragraph that opened the popover
+        activeContextSentence: '', // Sentence around the clicked word
+        currentEntry: null,        // Entry currently shown in the popover
+        modalEntry: null,          // Entry currently shown in Full Entry modal
+        savedWords: [],            // Array of saved word entry objects
+        clearConfirmTimer: null,   // Timer for two-step Clear All button
+        clearConfirmActive: false,
+        lookupRequestId: 0,        // Guards against out-of-order async updates
+        activeAudio: null,         // Currently playing HTMLAudioElement
+      };
+
+      // =========================================================================
+      // 2. DOM REFERENCES
+      // =========================================================================
+      const dom = {
+        themeToggleBtn: document.getElementById('theme-toggle-btn'),
+        themeIconMoon: document.getElementById('theme-icon-moon'),
+        themeIconSun: document.getElementById('theme-icon-sun'),
+        themeToggleLabel: document.getElementById('theme-toggle-label'),
+
+        paragraphInput: document.getElementById('paragraph-input'),
+        makeClickableBtn: document.getElementById('make-clickable-btn'),
+        loadSampleBtn: document.getElementById('load-sample-btn'),
+        clearInputBtn: document.getElementById('clear-input-btn'),
+        readingSurface: document.getElementById('reading-surface'),
+        wordCountMeta: document.getElementById('word-count-meta'),
+
+        popover: document.getElementById('definition-popover'),
+        popoverCaret: document.getElementById('popover-caret'),
+        popoverContent: document.getElementById('popover-content'),
+
+        fullEntryModal: document.getElementById('full-entry-modal'),
+        fullEntryPanel: document.getElementById('full-entry-panel'),
+        modalWordTitle: document.getElementById('modal-word-title'),
+        modalSourceBadge: document.getElementById('modal-source-badge'),
+        modalPhoneticLine: document.getElementById('modal-phonetic-line'),
+        modalAudioBtn: document.getElementById('modal-audio-btn'),
+        closeModalBtn: document.getElementById('close-modal-btn'),
+        modalBody: document.getElementById('modal-body'),
+        modalSaveBtn: document.getElementById('modal-save-btn'),
+        modalGoogleLink: document.getElementById('modal-google-link'),
+
+        openSavedBtn: document.getElementById('open-saved-btn'),
+        savedCountBadge: document.getElementById('saved-count-badge'),
+        savedDrawerBackdrop: document.getElementById('saved-drawer-backdrop'),
+        savedDrawerPanel: document.getElementById('saved-drawer-panel'),
+        closeDrawerBtn: document.getElementById('close-drawer-btn'),
+        drawerSubtitle: document.getElementById('drawer-subtitle'),
+        drawerClearAllBtn: document.getElementById('drawer-clear-all-btn'),
+        drawerSearchWrap: document.getElementById('drawer-search-wrap'),
+        drawerSearchInput: document.getElementById('drawer-search-input'),
+        drawerList: document.getElementById('drawer-list'),
+
+        toastContainer: document.getElementById('toast-container'),
+      };
+
+      // =========================================================================
+      // 3. THEME MANAGEMENT (LIGHT & LOW-GLARE GREY-ISH DARK MODE)
+      // =========================================================================
+
+      /**
+       * Applies the chosen theme ('light' or 'dark') to the document root,
+       * updates toggle button icons/labels/ARIA, and persists to localStorage.
+       */
+      function applyTheme(theme, persist = true) {
+        const isDark = theme === 'dark';
+        state.theme = isDark ? 'dark' : 'light';
+
+        if (isDark) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          dom.themeIconMoon.classList.add('hidden');
+          dom.themeIconSun.classList.remove('hidden');
+          dom.themeToggleLabel.textContent = 'Light';
+          dom.themeToggleBtn.setAttribute('aria-label', 'Switch to light mode');
+          dom.themeToggleBtn.setAttribute('aria-pressed', 'true');
+          dom.themeToggleBtn.setAttribute('title', 'Switch to light mode');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          dom.themeIconSun.classList.add('hidden');
+          dom.themeIconMoon.classList.remove('hidden');
+          dom.themeToggleLabel.textContent = 'Dark';
+          dom.themeToggleBtn.setAttribute('aria-label', 'Switch to dark mode');
+          dom.themeToggleBtn.setAttribute('aria-pressed', 'false');
+          dom.themeToggleBtn.setAttribute('title', 'Switch to dark mode');
+        }
+
+        if (persist) {
+          try {
+            localStorage.setItem(THEME_STORAGE_KEY, state.theme);
+          } catch (_) {
+            // Ignore storage restrictions
+          }
+        }
+      }
+
+      /**
+       * Initializes theme from localStorage (defaults to warm editorial light mode).
+       */
+      function initTheme() {
+        let initial = 'light';
+        try {
+          const saved = localStorage.getItem(THEME_STORAGE_KEY);
+          if (saved === 'dark' || saved === 'light') {
+            initial = saved;
+          }
+        } catch (_) {}
+        applyTheme(initial, false);
+      }
+
+      // =========================================================================
+      // 4. UTILITIES (XSS Escape, Storage, Toast, Sentence Extraction)
+      // =========================================================================
+
+      /**
+       * Safely escapes HTML special characters to prevent XSS injection.
+       */
+      function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      /**
+       * Normalizes a raw word token for dictionary queries and cache keys.
+       */
+      function normalizeWord(word) {
+        return String(word || '')
+          .trim()
+          .replace(/^[^a-zA-Z0-9\u00C0-\u024F]+|[^a-zA-Z0-9\u00C0-\u024F]+$/g, '')
+          .toLowerCase();
+      }
+
+      /**
+       * Displays a brief editorial toast pill at the bottom of the screen.
+       */
+      function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'bg-btnDark text-onBtnDark border border-borderStrong/40 text-[12.5px] font-medium px-4 py-2.5 rounded-full shadow-popover animate-popIn';
+        toast.textContent = message;
+        dom.toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'transition-opacity', 'duration-200');
+          setTimeout(() => toast.remove(), 220);
+        }, 2200);
+      }
+
+      /**
+       * Loads saved words from localStorage safely.
+       */
+      function loadSavedWords() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              state.savedWords = parsed;
+            }
+          }
+        } catch (_) {
+          state.savedWords = [];
+        }
+        updateSavedBadge();
+      }
+
+      /**
+       * Persists saved words to localStorage safely.
+       */
+      function persistSavedWords() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedWords));
+        } catch (_) {
+          // Ignore quota or storage restriction errors
+        }
+        updateSavedBadge();
+      }
+
+      /**
+       * Checks whether a word is already saved.
+       */
+      function isWordSaved(word) {
+        const norm = normalizeWord(word);
+        return state.savedWords.some((item) => normalizeWord(item.word) === norm);
+      }
+
+      /**
+       * Updates the subtle numeric badge on "Saved words" in the header.
+       */
+      function updateSavedBadge() {
+        const count = state.savedWords.length;
+        if (count > 0) {
+          dom.savedCountBadge.textContent = String(count);
+          dom.savedCountBadge.classList.remove('hidden');
+          dom.savedCountBadge.classList.add('inline-flex');
+        } else {
+          dom.savedCountBadge.classList.add('hidden');
+          dom.savedCountBadge.classList.remove('inline-flex');
+        }
+      }
+
+      /**
+       * Extracts the surrounding sentence for a given character offset in text.
+       */
+      function extractSentenceAtOffset(fullText, offset) {
+        if (!fullText) return '';
+        let start = offset;
+        while (start > 0 && !/[.!?\n]/.test(fullText[start - 1])) {
+          start--;
+        }
+        let end = offset;
+        while (end < fullText.length && !/[.!?\n]/.test(fullText[end])) {
+          end++;
+        }
+        if (end < fullText.length && /[.!?]/.test(fullText[end])) {
+          end++;
+        }
+        return fullText.slice(start, end).trim().slice(0, 320);
+      }
+
+      // =========================================================================
+      // 5. PARAGRAPH TOKENIZATION & INTERACTIVE RENDERING
+      // =========================================================================
+
+      /**
+       * Renders a paragraph into clickable word tokens while preserving
+       * exact spacing, punctuation, and paragraph/line breaks.
+       */
+      function renderClickableParagraph(rawText) {
+        closePopover();
+
+        const trimmed = (rawText || '').trim();
+        dom.readingSurface.innerHTML = '';
+
+        if (!trimmed) {
+          dom.wordCountMeta.textContent = '';
+          dom.readingSurface.innerHTML = `
+            <p class="font-sans text-[15px] text-muted italic py-6">
+              Paste or write a paragraph above, then click <strong class="font-medium text-ink not-italic">Make it clickable</strong> to begin reading.
+            </p>
+          `;
+          return;
+        }
+
+        const lines = rawText.split(/\n/);
+        let totalWords = 0;
+        let globalOffset = 0;
+
+        const fragment = document.createDocumentFragment();
+
+        lines.forEach((line, lineIdx) => {
+          if (line.trim() === '') {
+            const spacer = document.createElement('div');
+            spacer.className = 'h-4';
+            fragment.appendChild(spacer);
+            globalOffset += line.length + 1;
+            return;
+          }
+
+          const p = document.createElement('p');
+          if (lineIdx > 0) p.className = 'mt-4';
+
+          // Matches words (including internal apostrophes/hyphens) separately from whitespace/punctuation
+          const tokenRegex = /([A-Za-z\u00C0-\u024F]+(?:['’\-][A-Za-z\u00C0-\u024F]+)*)|([^A-Za-z\u00C0-\u024F]+)/g;
+          let match;
+
+          while ((match = tokenRegex.exec(line)) !== null) {
+            const wordPart = match[1];
+            const otherPart = match[2];
+            const tokenStart = globalOffset + match.index;
+
+            if (wordPart) {
+              totalWords++;
+              const span = document.createElement('span');
+              span.textContent = wordPart;
+              span.tabIndex = 0;
+              span.setAttribute('role', 'button');
+              span.dataset.word = wordPart;
+              span.dataset.sentence = extractSentenceAtOffset(rawText, tokenStart);
+              span.className = [
+                'word-token',
+                'inline',
+                'cursor-pointer',
+                'rounded-[5px]',
+                'px-[2px]',
+                '-mx-[2px]',
+                'py-[1px]',
+                'transition-colors',
+                'duration-150',
+                'hover:bg-beige',
+                'focus:outline-none',
+                'focus-visible:bg-amberHighlight/80',
+              ].join(' ');
+
+              span.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleWordActivation(span);
+              });
+
+              span.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleWordActivation(span);
+                }
+              });
+
+              p.appendChild(span);
+            } else if (otherPart) {
+              p.appendChild(document.createTextNode(otherPart));
+            }
+          }
+
+          fragment.appendChild(p);
+          globalOffset += line.length + 1;
+        });
+
+        dom.readingSurface.appendChild(fragment);
+        dom.wordCountMeta.textContent = `${totalWords} ${totalWords === 1 ? 'word' : 'words'}`;
+      }
+
+      // =========================================================================
+      // 6. GOOGLE SEARCH GROUNDED DEFINITION ENGINE (GEMINI + FREE DICTIONARY)
+      // =========================================================================
+
+      /**
+       * Fetch helper with exponential backoff (1s, 2s, 4s) for API resilience.
+       */
+      async function fetchWithBackoff(url, options, maxRetries = 3) {
+        let delay = 1000;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const response = await fetch(url, options);
+            if (response.ok) {
+              return response;
+            }
+            if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+              await new Promise((r) => setTimeout(r, delay));
+              delay *= 2;
+              continue;
+            }
+            return response;
+          } catch (err) {
+            if (attempt < maxRetries) {
+              await new Promise((r) => setTimeout(r, delay));
+              delay *= 2;
+              continue;
+            }
+            throw err;
+          }
+        }
+        throw new Error('Request failed after retries');
+      }
+
+      /**
+       * Queries Gemini with Google Search grounding for an accurate,
+       * Google Dictionary-style meaning tailored to the surrounding sentence.
+       */
+      async function fetchFromGeminiGoogle(word, contextSentence) {
+        const systemPrompt = [
+          'You are a precise lexicographer pulling standard Google Dictionary-style definitions using Google Search.',
+          'Return ONLY a single valid JSON object (no markdown fences, no commentary) matching this exact schema:',
+          '{',
+          '  "word": "string (headword/base spelling or exact word as commonly defined)",',
+          '  "phonetic": "string (IPA phonetic transcription wrapped in slashes, e.g. /ɪˈfem(ə)rəl/)",',
+          '  "partOfSpeech": "string (primary part of speech matching the context, e.g. adjective, noun, verb)",',
+          '  "definition": "string (concise, crystal-clear primary definition matching the context sentence)",',
+          '  "example": "string (short, natural illustrative example sentence)",',
+          '  "synonyms": ["3 to 4 concise single-word or short synonyms"],',
+          '  "etymology": "string (1-2 sentence word origin/etymology)",',
+          '  "fullEntries": [',
+          '    {',
+          '      "partOfSpeech": "string",',
+          '      "definitions": [',
+          '        { "definition": "string", "example": "string (optional)" }',
+          '      ],',
+          '      "synonyms": ["optional short synonyms"]',
+          '    }',
+          '  ]',
+          '}',
+          'Ensure the primary definition matches how the word is used in the given context sentence if one is provided.'
+        ].join('\n');
+
+        const userPrompt = contextSentence
+          ? `Look up the Google Dictionary definition for the word "${word}" as used in this sentence: "${contextSentence}". Include pronunciation IPA, primary meaning, natural example, 3-4 synonyms, etymology, and additional meanings across parts of speech.`
+          : `Look up the Google Dictionary definition for the word "${word}". Include pronunciation IPA, primary meaning, natural example, 3-4 synonyms, etymology, and additional meanings across parts of speech.`;
+
+        const payload = {
+          contents: [{ parts: [{ text: userPrompt }] }],
+          tools: [{ google_search: {} }],
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+        };
+
+        const response = await fetchWithBackoff(GEMINI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Gemini HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        const candidate = result?.candidates?.[0];
+        const rawText = candidate?.content?.parts?.map((p) => p.text || '').join('') || '';
+
+        if (!rawText) {
+          throw new Error('Empty Gemini response');
+        }
+
+        const cleaned = rawText
+          .replace(/```json\s*/gi, '')
+          .replace(/```\s*/g, '')
+          .trim();
+
+        const firstBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace === -1) {
+          throw new Error('No JSON object found in response');
+        }
+
+        const parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+
+        // Extract Google Search grounding attributions or chunks if present
+        let sources = [];
+        const attributions = candidate?.groundingMetadata?.groundingAttributions || [];
+        if (Array.isArray(attributions)) {
+          sources = attributions
+            .map((a) => ({ uri: a.web?.uri, title: a.web?.title }))
+            .filter((s) => s.uri && s.title);
+        }
+
+        const chunks = candidate?.groundingMetadata?.groundingChunks || [];
+        if (sources.length === 0 && Array.isArray(chunks)) {
+          sources = chunks
+            .map((c) => ({ uri: c.web?.uri, title: c.web?.title }))
+            .filter((s) => s.uri && s.title);
+        }
+
+        return {
+          word: parsed.word || word,
+          phonetic: parsed.phonetic || '',
+          partOfSpeech: parsed.partOfSpeech || '',
+          definition: parsed.definition || '',
+          example: parsed.example || '',
+          synonyms: Array.isArray(parsed.synonyms) ? parsed.synonyms.filter(Boolean).slice(0, 5) : [],
+          etymology: parsed.etymology || '',
+          fullEntries: Array.isArray(parsed.fullEntries) ? parsed.fullEntries : [],
+          audioUrl: '',
+          sourceLabel: 'Google',
+          groundingSources: sources.slice(0, 3),
+        };
+      }
+
+      /**
+       * Queries Free Dictionary API in parallel for pronunciation MP3 audio
+       * and as a fast, resilient fallback if Gemini is unavailable.
+       */
+      async function fetchFromFreeDictionary(word) {
+        const clean = normalizeWord(word);
+        if (!clean) throw new Error('Empty word');
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        try {
+          const response = await fetch(`${FREE_DICT_ENDPOINT}${encodeURIComponent(clean)}`, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`Free Dictionary HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (!Array.isArray(data) || data.length === 0) {
+            throw new Error('No entries');
+          }
+
+          const first = data[0];
+          let audioUrl = '';
+          let phoneticText = first.phonetic || '';
+
+          for (const entry of data) {
+            if (!phoneticText && entry.phonetic) phoneticText = entry.phonetic;
+            if (Array.isArray(entry.phonetics)) {
+              for (const p of entry.phonetics) {
+                if (!phoneticText && p.text) phoneticText = p.text;
+                if (p.audio && p.audio.trim()) {
+                  if (!audioUrl || p.audio.includes('-us.') || p.audio.includes('-uk.')) {
+                    audioUrl = p.audio.trim();
+                    if (audioUrl.startsWith('//')) audioUrl = 'https:' + audioUrl;
+                  }
+                }
+              }
+            }
+          }
+
+          const fullEntries = [];
+          const allSynonyms = new Set();
+
+          for (const entry of data) {
+            for (const m of (entry.meanings || [])) {
+              const defs = (m.definitions || []).slice(0, 4).map((d) => {
+                (d.synonyms || []).forEach((s) => allSynonyms.add(s));
+                return {
+                  definition: d.definition || '',
+                  example: d.example || '',
+                };
+              }).filter((d) => d.definition);
+
+              (m.synonyms || []).forEach((s) => allSynonyms.add(s));
+
+              if (defs.length > 0) {
+                fullEntries.push({
+                  partOfSpeech: m.partOfSpeech || '',
+                  definitions: defs,
+                  synonyms: (m.synonyms || []).slice(0, 6),
+                });
+              }
+            }
+          }
+
+          const primaryMeaning = fullEntries[0];
+          const primaryDefObj = primaryMeaning?.definitions?.[0];
+
+          return {
+            word: first.word || clean,
+            phonetic: phoneticText,
+            partOfSpeech: primaryMeaning?.partOfSpeech || '',
+            definition: primaryDefObj?.definition || '',
+            example: primaryDefObj?.example || '',
+            synonyms: Array.from(allSynonyms).slice(0, 4),
+            etymology: first.origin || '',
+            fullEntries,
+            audioUrl,
+            sourceLabel: 'Dictionary API',
+            groundingSources: [],
+          };
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      /**
+       * Unified lookup pipeline: runs Google-grounded Gemini lookup and Free Dictionary API
+       * in parallel, caches results in memory, and merges audio + definitions seamlessly.
+       */
+      async function lookupWord(rawWord, contextSentence = '') {
+        const cleanWord = normalizeWord(rawWord);
+        if (!cleanWord) {
+          throw new Error('Please select a valid word.');
+        }
+
+        const contextKey = contextSentence
+          ? contextSentence.toLowerCase().replace(/\s+/g, ' ').slice(0, 60)
+          : '';
+        const cacheKey = `${cleanWord}::${contextKey}`;
+
+        if (definitionCache.has(cacheKey)) {
+          return definitionCache.get(cacheKey);
+        }
+
+        const [geminiRes, freeDictRes] = await Promise.allSettled([
+          fetchFromGeminiGoogle(cleanWord, contextSentence),
+          fetchFromFreeDictionary(cleanWord),
+        ]);
+
+        const geminiData = geminiRes.status === 'fulfilled' ? geminiRes.value : null;
+        const dictData = freeDictRes.status === 'fulfilled' ? freeDictRes.value : null;
+
+        if (!geminiData && !dictData) {
+          throw new Error(`We couldn't find a definition for "${cleanWord}".`);
+        }
+
+        let merged;
+        if (geminiData && geminiData.definition) {
+          const normalizedFullEntries =
+            geminiData.fullEntries && geminiData.fullEntries.length > 0
+              ? geminiData.fullEntries
+              : (dictData?.fullEntries || [{
+                  partOfSpeech: geminiData.partOfSpeech || 'definition',
+                  definitions: [{ definition: geminiData.definition, example: geminiData.example }],
+                  synonyms: geminiData.synonyms,
+                }]);
+
+          merged = {
+            word: geminiData.word || cleanWord,
+            queryWord: cleanWord,
+            phonetic: geminiData.phonetic || dictData?.phonetic || '',
+            partOfSpeech: geminiData.partOfSpeech || dictData?.partOfSpeech || '',
+            definition: geminiData.definition,
+            example: geminiData.example || dictData?.example || '',
+            synonyms:
+              geminiData.synonyms && geminiData.synonyms.length > 0
+                ? geminiData.synonyms
+                : (dictData?.synonyms || []),
+            etymology: geminiData.etymology || dictData?.etymology || '',
+            fullEntries: normalizedFullEntries,
+            audioUrl: dictData?.audioUrl || '',
+            sourceLabel: 'Google',
+            groundingSources: geminiData.groundingSources || [],
+          };
+        } else {
+          merged = {
+            ...dictData,
+            queryWord: cleanWord,
+            sourceLabel: 'Google / Dictionary',
+          };
+        }
+
+        definitionCache.set(cacheKey, merged);
+        if (!definitionCache.has(`${cleanWord}::`)) {
+          definitionCache.set(`${cleanWord}::`, merged);
+        }
+
+        return merged;
+      }
+
+      // =========================================================================
+      // 7. PRONUNCIATION AUDIO ENGINE (MP3 + Web SpeechSynthesis Fallback)
+      // =========================================================================
+
+      /**
+       * Plays pronunciation using Dictionary MP3 URL if available, gracefully
+       * falling back to browser SpeechSynthesis.
+       */
+      function playPronunciation(entry, triggerBtn = null) {
+        if (!entry || !entry.word) return;
+
+        if (state.activeAudio) {
+          try {
+            state.activeAudio.pause();
+            state.activeAudio.currentTime = 0;
+          } catch (_) {}
+          state.activeAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch (_) {}
+        }
+
+        const setPlayingVisual = (isPlaying) => {
+          if (!triggerBtn) return;
+          if (isPlaying) {
+            triggerBtn.classList.add('bg-amberHighlight', 'text-terracotta', 'animate-soundPulse');
+            triggerBtn.classList.remove('bg-beige', 'text-ink');
+          } else {
+            triggerBtn.classList.remove('bg-amberHighlight', 'text-terracotta', 'animate-soundPulse');
+            triggerBtn.classList.add('bg-beige', 'text-ink');
+          }
+        };
+
+        const speakFallback = () => {
+          if (!('speechSynthesis' in window)) {
+            showToast('Audio pronunciation is unavailable in this browser.');
+            return;
+          }
+          try {
+            const utterance = new SpeechSynthesisUtterance(entry.word);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.94;
+            utterance.onstart = () => setPlayingVisual(true);
+            utterance.onend = () => setPlayingVisual(false);
+            utterance.onerror = () => setPlayingVisual(false);
+            setPlayingVisual(true);
+            window.speechSynthesis.speak(utterance);
+          } catch (_) {
+            setPlayingVisual(false);
+          }
+        };
+
+        if (entry.audioUrl) {
+          try {
+            const audio = new Audio(entry.audioUrl);
+            state.activeAudio = audio;
+            setPlayingVisual(true);
+            audio.onended = () => setPlayingVisual(false);
+            audio.onerror = () => {
+              setPlayingVisual(false);
+              speakFallback();
+            };
+            const playPromise = audio.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+              playPromise.catch(() => {
+                setPlayingVisual(false);
+                speakFallback();
+              });
+            }
+          } catch (_) {
+            setPlayingVisual(false);
+            speakFallback();
+          }
+        } else {
+          speakFallback();
+        }
+      }
+
+      // =========================================================================
+      // 8. FLOATING POPOVER POSITIONING & RENDERING
+      // =========================================================================
+
+      /**
+       * Highlights the clicked word span in warm amber/ochre with a bottom accent stroke.
+       */
+      function setActiveWordHighlight(spanEl) {
+        if (state.activeWordEl) {
+          state.activeWordEl.classList.remove(
+            'bg-amberHighlight',
+            'border-b-2',
+            'border-amberStroke',
+            'rounded-b-none',
+            'hover:bg-amberHighlight'
+          );
+          state.activeWordEl.classList.add('hover:bg-beige');
+        }
+
+        state.activeWordEl = spanEl;
+
+        if (spanEl) {
+          spanEl.classList.remove('hover:bg-beige');
+          spanEl.classList.add(
+            'bg-amberHighlight',
+            'border-b-2',
+            'border-amberStroke',
+            'rounded-b-none',
+            'hover:bg-amberHighlight'
+          );
+        }
+      }
+
+      /**
+       * Positions the floating popover card relative to the clicked word span,
+       * clamping smoothly inside the viewport on all screen sizes.
+       */
+      function positionPopover(targetEl) {
+        if (!targetEl || dom.popover.classList.contains('hidden')) return;
+
+        const rect = targetEl.getBoundingClientRect();
+        const scrollX = window.scrollX || window.pageXOffset;
+        const scrollY = window.scrollY || window.pageYOffset;
+        const viewportW = document.documentElement.clientWidth;
+        const viewportH = window.innerHeight;
+
+        const popRect = dom.popover.getBoundingClientRect();
+        const popW = popRect.width || Math.min(356, viewportW - 24);
+        const popH = popRect.height || 260;
+
+        const margin = 12;
+        const gap = 12;
+
+        let left = rect.left + scrollX - 18;
+        const maxLeft = scrollX + viewportW - popW - margin;
+        const minLeft = scrollX + margin;
+        left = Math.max(minLeft, Math.min(left, maxLeft));
+
+        const spaceBelow = viewportH - rect.bottom;
+        const spaceAbove = rect.top;
+        let placeAbove = false;
+
+        if (spaceBelow < popH + gap + 12 && spaceAbove > popH + gap + 12) {
+          placeAbove = true;
+        }
+
+        const top = placeAbove
+          ? rect.top + scrollY - popH - gap
+          : rect.bottom + scrollY + gap;
+
+        dom.popover.style.left = `${Math.round(left)}px`;
+        dom.popover.style.top = `${Math.round(top)}px`;
+
+        const wordCenterX = rect.left + rect.width / 2 + scrollX;
+        const caretLeft = Math.max(22, Math.min(wordCenterX - left - 7, popW - 34));
+        dom.popoverCaret.style.left = `${Math.round(caretLeft)}px`;
+
+        if (placeAbove) {
+          dom.popoverCaret.style.top = '';
+          dom.popoverCaret.style.bottom = '-7px';
+          dom.popoverCaret.classList.remove('border-l', 'border-t');
+          dom.popoverCaret.classList.add('border-r', 'border-b');
+        } else {
+          dom.popoverCaret.style.bottom = '';
+          dom.popoverCaret.style.top = '-7px';
+          dom.popoverCaret.classList.remove('border-r', 'border-b');
+          dom.popoverCaret.classList.add('border-l', 'border-t');
+        }
+      }
+
+      /**
+       * Renders an elegant shimmer skeleton inside the popover while fetching.
+       */
+      function renderPopoverLoading(word) {
+        dom.popoverContent.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-serif text-[24px] font-semibold leading-tight text-ink truncate">
+                ${escapeHtml(word)}
+              </div>
+              <div class="mt-2 h-3.5 w-36 rounded-md bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+            </div>
+            <button
+              type="button"
+              data-action="close-popover"
+              class="w-8 h-8 rounded-full hover:bg-beige text-muted hover:text-ink flex items-center justify-center shrink-0 cursor-pointer"
+              aria-label="Close card"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="mt-4 space-y-2.5">
+            <div class="h-3.5 w-full rounded-md bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+            <div class="h-3.5 w-4/5 rounded-md bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+          </div>
+
+          <div class="mt-3.5 pl-3 border-l-2 border-quoteBorder space-y-2">
+            <div class="h-3 w-11/12 rounded-md bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-2">
+            <div class="h-6 w-16 rounded-full bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+            <div class="h-6 w-20 rounded-full bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+            <div class="h-6 w-16 rounded-full bg-gradient-to-r from-beige via-shimmerMid to-beige bg-[length:200%_100%] animate-shimmer"></div>
+          </div>
+
+          <div class="mt-4 pt-3.5 border-t border-borderSoft flex items-center justify-between text-[11.5px] text-muted">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-terracotta animate-pulse"></span>
+              Looking up on Google…
+            </span>
+          </div>
+        `;
+
+        const closeBtn = dom.popoverContent.querySelector('[data-action="close-popover"]');
+        if (closeBtn) closeBtn.addEventListener('click', closePopover);
+      }
+
+      /**
+       * Renders a graceful error state inside the popover with retry + Google link.
+       */
+      function renderPopoverError(word, errorMsg) {
+        const googleUrl = `https://www.google.com/search?q=define+${encodeURIComponent(word)}`;
+        dom.popoverContent.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="font-serif text-[23px] font-semibold leading-tight text-ink">
+              ${escapeHtml(word)}
+            </h3>
+            <button
+              type="button"
+              data-action="close-popover"
+              class="w-8 h-8 rounded-full hover:bg-beige text-muted hover:text-ink flex items-center justify-center shrink-0 cursor-pointer"
+              aria-label="Close card"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="mt-2.5 text-[14px] leading-relaxed text-secondary">
+            ${escapeHtml(errorMsg || 'Could not retrieve a definition right now.')}
+          </p>
+          <div class="mt-4 pt-3.5 border-t border-borderSoft flex items-center justify-between gap-3">
+            <button
+              type="button"
+              data-action="retry-lookup"
+              class="bg-btnDark hover:bg-btnDarkHover text-onBtnDark border border-borderStrong/40 text-[12.5px] font-medium px-3.5 py-2 rounded-xl cursor-pointer"
+            >
+              Try again
+            </button>
+            <a
+              href="${googleUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[12.5px] font-medium text-terracotta hover:text-terracottaHover underline underline-offset-4"
+            >
+              Search on Google ↗
+            </a>
+          </div>
+        `;
+
+        dom.popoverContent.querySelector('[data-action="close-popover"]')?.addEventListener('click', closePopover);
+        dom.popoverContent.querySelector('[data-action="retry-lookup"]')?.addEventListener('click', () => {
+          performPopoverLookup(word, state.activeContextSentence);
+        });
+      }
+
+      /**
+       * Renders the full structured definition card inside the floating popover.
+       */
+      function renderPopoverEntry(entry, isSynonymDrilldown = false) {
+        state.currentEntry = entry;
+        const saved = isWordSaved(entry.word);
+
+        const metaParts = [];
+        if (entry.phonetic) metaParts.push(escapeHtml(entry.phonetic));
+        if (entry.partOfSpeech) metaParts.push(escapeHtml(entry.partOfSpeech));
+        const metaLine = metaParts.join(' · ');
+
+        const synonymsHtml = (entry.synonyms && entry.synonyms.length > 0)
+          ? `
+            <div class="mt-3.5 flex flex-wrap gap-1.5" aria-label="Synonyms">
+              ${entry.synonyms.slice(0, 4).map((syn) => `
+                <button
+                  type="button"
+                  data-synonym="${escapeHtml(syn)}"
+                  class="bg-beige hover:bg-beigeHover text-pillText hover:text-ink border border-borderWarm/60 text-[12px] font-medium px-2.5 py-1 rounded-full cursor-pointer"
+                >
+                  ${escapeHtml(syn)}
+                </button>
+              `).join('')}
+            </div>
+          `
+          : '';
+
+        const exampleHtml = entry.example
+          ? `
+            <p class="mt-3 pl-3 border-l-2 border-quoteBorder text-[13.5px] italic leading-[1.55] text-secondary">
+              ${escapeHtml(entry.example)}
+            </p>
+          `
+          : '';
+
+        const backToOriginalHtml = (isSynonymDrilldown && state.activeWordOriginal && normalizeWord(state.activeWordOriginal) !== normalizeWord(entry.word))
+          ? `
+            <button
+              type="button"
+              data-action="back-to-original"
+              class="inline-flex items-center gap-1 text-[11.5px] font-medium text-terracotta hover:text-terracottaHover mb-2 cursor-pointer"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to “${escapeHtml(state.activeWordOriginal)}”</span>
+            </button>
+          `
+          : '';
+
+        dom.popoverContent.innerHTML = `
+          ${backToOriginalHtml}
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="font-serif text-[25px] font-semibold leading-[1.15] text-ink break-words">
+                ${escapeHtml(entry.word)}
+              </h3>
+              ${metaLine ? `<p class="mt-1 text-[12.5px] text-muted">${metaLine}</p>` : ''}
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-action="play-audio"
+                class="w-9 h-9 rounded-full bg-beige hover:bg-beigeHover text-ink flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+                aria-label="Pronounce ${escapeHtml(entry.word)}"
+                title="Listen"
+              >
+                <svg class="w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                data-action="close-popover"
+                class="w-8 h-8 rounded-full hover:bg-beige text-muted hover:text-ink flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+                aria-label="Close definition card"
+                title="Close"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="mt-3.5 text-[14.5px] leading-[1.58] text-ink">
+            ${escapeHtml(entry.definition)}
+          </p>
+
+          ${exampleHtml}
+          ${synonymsHtml}
+
+          <div class="mt-4 pt-4 border-t border-borderSoft flex items-center justify-between gap-3">
+            <button
+              type="button"
+              data-action="toggle-save"
+              class="${saved
+                ? 'bg-beige text-ink border border-borderStrong hover:bg-beigeHover'
+                : 'bg-btnDark text-onBtnDark border border-borderStrong/40 hover:bg-btnDarkHover'
+              } text-[12.5px] font-medium px-4 py-2.5 rounded-xl cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40"
+            >
+              ${saved ? 'Saved ✓' : 'Save word'}
+            </button>
+
+            <button
+              type="button"
+              data-action="open-full-entry"
+              class="text-[12.5px] font-medium text-terracotta hover:text-terracottaHover underline underline-offset-4 py-1.5 px-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/40 rounded"
+            >
+              Full entry
+            </button>
+          </div>
+        `;
+
+        const audioBtn = dom.popoverContent.querySelector('[data-action="play-audio"]');
+        audioBtn?.addEventListener('click', () => playPronunciation(entry, audioBtn));
+
+        dom.popoverContent.querySelector('[data-action="close-popover"]')?.addEventListener('click', closePopover);
+
+        dom.popoverContent.querySelector('[data-action="toggle-save"]')?.addEventListener('click', () => {
+          toggleSaveWord(entry);
+          renderPopoverEntry(entry, isSynonymDrilldown);
+        });
+
+        dom.popoverContent.querySelector('[data-action="open-full-entry"]')?.addEventListener('click', () => {
+          openFullEntryModal(entry);
+        });
+
+        dom.popoverContent.querySelector('[data-action="back-to-original"]')?.addEventListener('click', () => {
+          if (state.activeWordOriginal) {
+            performPopoverLookup(state.activeWordOriginal, state.activeContextSentence, false);
+          }
+        });
+
+        dom.popoverContent.querySelectorAll('[data-synonym]').forEach((pill) => {
+          pill.addEventListener('click', () => {
+            const syn = pill.getAttribute('data-synonym');
+            if (syn) {
+              performPopoverLookup(syn, '', true);
+            }
+          });
+        });
+
+        requestAnimationFrame(() => positionPopover(state.activeWordEl));
+      }
+
+      /**
+       * Triggered when a user clicks or presses Enter on a word in the paragraph.
+       */
+      function handleWordActivation(spanEl) {
+        const clickedWord = spanEl.dataset.word || spanEl.textContent || '';
+        const sentence = spanEl.dataset.sentence || '';
+
+        if (state.activeWordEl === spanEl && !dom.popover.classList.contains('hidden')) {
+          closePopover();
+          return;
+        }
+
+        state.activeWordOriginal = clickedWord;
+        state.activeContextSentence = sentence;
+
+        setActiveWordHighlight(spanEl);
+        dom.popover.classList.remove('hidden');
+
+        performPopoverLookup(clickedWord, sentence, false);
+      }
+
+      /**
+       * Executes an async lookup and updates the open popover safely.
+       */
+      async function performPopoverLookup(word, contextSentence, isSynonymDrilldown = false) {
+        const requestId = ++state.lookupRequestId;
+        const cleanWord = normalizeWord(word);
+
+        const contextKey = contextSentence
+          ? contextSentence.toLowerCase().replace(/\s+/g, ' ').slice(0, 60)
+          : '';
+        const cached = definitionCache.get(`${cleanWord}::${contextKey}`) || (!contextKey ? definitionCache.get(`${cleanWord}::`) : null);
+
+        if (cached) {
+          renderPopoverEntry(cached, isSynonymDrilldown);
+          positionPopover(state.activeWordEl);
+          return;
+        }
+
+        renderPopoverLoading(cleanWord || word);
+        positionPopover(state.activeWordEl);
+
+        try {
+          const entry = await lookupWord(cleanWord, contextSentence);
+          if (requestId !== state.lookupRequestId || dom.popover.classList.contains('hidden')) {
+            return;
+          }
+          renderPopoverEntry(entry, isSynonymDrilldown);
+        } catch (err) {
+          if (requestId !== state.lookupRequestId || dom.popover.classList.contains('hidden')) {
+            return;
+          }
+          renderPopoverError(cleanWord || word, err.message);
+          requestAnimationFrame(() => positionPopover(state.activeWordEl));
+        }
+      }
+
+      /**
+       * Closes the floating popover and clears the active word highlight.
+       */
+      function closePopover() {
+        state.lookupRequestId++;
+        dom.popover.classList.add('hidden');
+        setActiveWordHighlight(null);
+        state.currentEntry = null;
+      }
+
+      // =========================================================================
+      // 9. FULL ENTRY MODAL
+      // =========================================================================
+
+      /**
+       * Opens the rich editorial Full Entry modal for a given word entry.
+       */
+      function openFullEntryModal(entry) {
+        if (!entry) return;
+        state.modalEntry = entry;
+
+        dom.modalWordTitle.textContent = entry.word;
+
+        const metaParts = [];
+        if (entry.phonetic) metaParts.push(entry.phonetic);
+        if (entry.partOfSpeech) metaParts.push(entry.partOfSpeech);
+        dom.modalPhoneticLine.textContent = metaParts.join(' · ') || 'Dictionary entry';
+
+        dom.modalGoogleLink.href = `https://www.google.com/search?q=define+${encodeURIComponent(entry.word)}`;
+        updateModalSaveButton();
+
+        const entriesList = (entry.fullEntries && entry.fullEntries.length > 0)
+          ? entry.fullEntries
+          : [{
+              partOfSpeech: entry.partOfSpeech || 'definition',
+              definitions: [{ definition: entry.definition, example: entry.example }],
+              synonyms: entry.synonyms || [],
+            }];
+
+        let bodyHtml = '';
+
+        entriesList.forEach((section) => {
+          const defs = Array.isArray(section.definitions) ? section.definitions : [];
+          if (defs.length === 0) return;
+
+          const sectionSyns = Array.isArray(section.synonyms) ? section.synonyms.filter(Boolean) : [];
+
+          bodyHtml += `
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <span class="font-serif italic text-[16px] font-medium text-terracotta">
+                  ${escapeHtml(section.partOfSpeech || 'definition')}
+                </span>
+                <div class="h-px flex-1 bg-borderWarm"></div>
+              </div>
+
+              <ol class="space-y-3.5 pl-1">
+                ${defs.map((d, idx) => `
+                  <li class="flex gap-3">
+                    <span class="text-[12.5px] font-semibold text-muted mt-[3px] w-4 shrink-0">${idx + 1}.</span>
+                    <div class="space-y-1.5 min-w-0">
+                      <p class="text-[14.5px] leading-[1.6] text-ink">${escapeHtml(d.definition)}</p>
+                      ${d.example ? `
+                        <p class="pl-3 border-l-2 border-quoteBorder text-[13.5px] italic text-secondary leading-relaxed">
+                          “${escapeHtml(d.example)}”
+                        </p>
+                      ` : ''}
+                    </div>
+                  </li>
+                `).join('')}
+              </ol>
+
+              ${sectionSyns.length > 0 ? `
+                <div class="flex flex-wrap items-center gap-1.5 pt-1 pl-7">
+                  <span class="text-[11px] uppercase tracking-wider font-semibold text-muted mr-1">Similar</span>
+                  ${sectionSyns.slice(0, 6).map((s) => `
+                    <button
+                      type="button"
+                      data-modal-synonym="${escapeHtml(s)}"
+                      class="bg-beige hover:bg-beigeHover text-pillText hover:text-ink border border-borderWarm/60 text-[12px] font-medium px-2.5 py-1 rounded-full cursor-pointer"
+                    >
+                      ${escapeHtml(s)}
+                    </button>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+
+        const hasSectionSyns = entriesList.some((s) => Array.isArray(s.synonyms) && s.synonyms.length > 0);
+        if (!hasSectionSyns && entry.synonyms && entry.synonyms.length > 0) {
+          bodyHtml += `
+            <div class="pt-1">
+              <div class="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted mb-2.5">Synonyms</div>
+              <div class="flex flex-wrap gap-1.5">
+                ${entry.synonyms.map((s) => `
+                  <button
+                    type="button"
+                    data-modal-synonym="${escapeHtml(s)}"
+                    class="bg-beige hover:bg-beigeHover text-pillText hover:text-ink border border-borderWarm/60 text-[12.5px] font-medium px-3 py-1 rounded-full cursor-pointer"
+                  >
+                    ${escapeHtml(s)}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (entry.etymology) {
+          bodyHtml += `
+            <div class="bg-card border border-borderWarm rounded-xl p-4">
+              <div class="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted mb-1.5">
+                Word Origin
+              </div>
+              <p class="text-[13.5px] leading-[1.6] text-secondary">
+                ${escapeHtml(entry.etymology)}
+              </p>
+            </div>
+          `;
+        }
+
+        if (entry.groundingSources && entry.groundingSources.length > 0) {
+          bodyHtml += `
+            <div class="pt-1">
+              <div class="text-[11px] uppercase tracking-[0.08em] font-semibold text-muted mb-2">
+                Google Grounding References
+              </div>
+              <div class="flex flex-wrap gap-2">
+                ${entry.groundingSources.map((src) => `
+                  <a
+                    href="${escapeHtml(src.uri)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 text-[12px] text-secondary hover:text-terracotta bg-beige hover:bg-beigeHover border border-borderWarm/60 px-2.5 py-1 rounded-lg max-w-full truncate"
+                  >
+                    <span class="truncate">${escapeHtml(src.title)}</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        dom.modalBody.innerHTML = bodyHtml;
+
+        dom.modalBody.querySelectorAll('[data-modal-synonym]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const syn = btn.getAttribute('data-modal-synonym');
+            if (!syn) return;
+            dom.modalWordTitle.textContent = syn;
+            dom.modalPhoneticLine.textContent = 'Looking up on Google…';
+            dom.modalBody.innerHTML = `
+              <div class="space-y-3 py-4">
+                <div class="h-4 w-3/4 rounded bg-beige animate-pulse"></div>
+                <div class="h-4 w-full rounded bg-beige animate-pulse"></div>
+                <div class="h-4 w-2/3 rounded bg-beige animate-pulse"></div>
+              </div>
+            `;
+            try {
+              const newEntry = await lookupWord(syn, '');
+              openFullEntryModal(newEntry);
+            } catch (err) {
+              dom.modalPhoneticLine.textContent = '';
+              dom.modalBody.innerHTML = `<p class="text-[14px] text-secondary">${escapeHtml(err.message)}</p>`;
+            }
+          });
+        });
+
+        dom.fullEntryModal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+      }
+
+      /**
+       * Syncs the Full Entry modal's Save/Saved button with current savedWords.
+       */
+      function updateModalSaveButton() {
+        if (!state.modalEntry) return;
+        const saved = isWordSaved(state.modalEntry.word);
+        dom.modalSaveBtn.textContent = saved ? 'Saved ✓' : 'Save word';
+        if (saved) {
+          dom.modalSaveBtn.className = 'inline-flex items-center justify-center gap-2 bg-beige hover:bg-beigeHover text-ink border border-borderStrong text-[13px] font-medium px-4 py-2.5 rounded-xl cursor-pointer';
+        } else {
+          dom.modalSaveBtn.className = 'inline-flex items-center justify-center gap-2 bg-btnDark hover:bg-btnDarkHover text-onBtnDark border border-borderStrong/40 text-[13px] font-medium px-4 py-2.5 rounded-xl cursor-pointer';
+        }
+      }
+
+      /**
+       * Closes the Full Entry modal.
+       */
+      function closeFullEntryModal() {
+        dom.fullEntryModal.classList.add('hidden');
+        state.modalEntry = null;
+        if (dom.savedDrawerBackdrop.classList.contains('hidden')) {
+          document.body.classList.remove('overflow-hidden');
+        }
+      }
+
+      // =========================================================================
+      // 10. SAVED WORDS STORAGE & SLIDE-OVER DRAWER
+      // =========================================================================
+
+      /**
+       * Toggles a word in the saved list and updates UI across popover, modal, and drawer.
+       */
+      function toggleSaveWord(entry) {
+        if (!entry || !entry.word) return;
+        const norm = normalizeWord(entry.word);
+        const existingIdx = state.savedWords.findIndex((w) => normalizeWord(w.word) === norm);
+
+        if (existingIdx >= 0) {
+          state.savedWords.splice(existingIdx, 1);
+          showToast(`Removed “${entry.word}” from saved words`);
+        } else {
+          state.savedWords.unshift({
+            word: entry.word,
+            phonetic: entry.phonetic || '',
+            partOfSpeech: entry.partOfSpeech || '',
+            definition: entry.definition || '',
+            example: entry.example || '',
+            synonyms: entry.synonyms || [],
+            etymology: entry.etymology || '',
+            fullEntries: entry.fullEntries || [],
+            audioUrl: entry.audioUrl || '',
+            sourceLabel: entry.sourceLabel || 'Google',
+            groundingSources: entry.groundingSources || [],
+            savedAt: Date.now(),
+          });
+          showToast(`Saved “${entry.word}”`);
+        }
+
+        persistSavedWords();
+        updateModalSaveButton();
+        if (!dom.savedDrawerBackdrop.classList.contains('hidden')) {
+          renderSavedDrawerList();
+        }
+      }
+
+      /**
+       * Opens the Saved Words slide-over drawer.
+       */
+      function openSavedDrawer() {
+        closePopover();
+        resetClearConfirmState();
+        dom.drawerSearchInput.value = '';
+        renderSavedDrawerList();
+
+        dom.savedDrawerBackdrop.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        requestAnimationFrame(() => {
+          dom.savedDrawerPanel.classList.remove('translate-x-full');
+          dom.savedDrawerPanel.classList.add('translate-x-0');
+        });
+      }
+
+      /**
+       * Closes the Saved Words slide-over drawer.
+       */
+      function closeSavedDrawer() {
+        resetClearConfirmState();
+        dom.savedDrawerPanel.classList.remove('translate-x-0');
+        dom.savedDrawerPanel.classList.add('translate-x-full');
+
+        setTimeout(() => {
+          dom.savedDrawerBackdrop.classList.add('hidden');
+          if (dom.fullEntryModal.classList.contains('hidden')) {
+            document.body.classList.remove('overflow-hidden');
+          }
+        }, 200);
+      }
+
+      /**
+       * Resets the two-step inline "Clear all" confirmation button state.
+       */
+      function resetClearConfirmState() {
+        clearTimeout(state.clearConfirmTimer);
+        state.clearConfirmActive = false;
+        dom.drawerClearAllBtn.textContent = 'Clear all';
+        dom.drawerClearAllBtn.classList.remove('bg-terracotta', 'text-onTerracotta', 'hover:bg-terracottaHover', 'hover:text-onTerracotta');
+        dom.drawerClearAllBtn.classList.add('text-muted', 'hover:text-terracotta', 'hover:bg-beige');
+      }
+
+      /**
+       * Renders all saved words (filtered by search query if present) inside the drawer.
+       */
+      function renderSavedDrawerList() {
+        const total = state.savedWords.length;
+        dom.drawerSubtitle.textContent = `${total} ${total === 1 ? 'word' : 'words'} saved`;
+
+        if (total > 0) {
+          dom.drawerClearAllBtn.classList.remove('hidden');
+        } else {
+          dom.drawerClearAllBtn.classList.add('hidden');
+        }
+
+        if (total >= 3) {
+          dom.drawerSearchWrap.classList.remove('hidden');
+        } else {
+          dom.drawerSearchWrap.classList.add('hidden');
+        }
+
+        const query = (dom.drawerSearchInput.value || '').trim().toLowerCase();
+        const filtered = query
+          ? state.savedWords.filter((item) =>
+              item.word.toLowerCase().includes(query) ||
+              (item.definition || '').toLowerCase().includes(query)
+            )
+          : state.savedWords;
+
+        if (total === 0) {
+          dom.drawerList.innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center py-16 px-6">
+              <div class="w-12 h-12 rounded-2xl bg-beige border border-borderWarm flex items-center justify-center text-terracotta mb-4">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+                </svg>
+              </div>
+              <h3 class="font-serif text-[20px] font-medium text-ink">No saved words yet</h3>
+              <p class="mt-1.5 text-[13.5px] leading-relaxed text-secondary max-w-[260px]">
+                Tap any word in your paragraph and click <strong class="font-medium text-ink">Save word</strong> to build your personal vocabulary list.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        if (filtered.length === 0) {
+          dom.drawerList.innerHTML = `
+            <p class="text-center text-[13.5px] text-secondary py-12">
+              No saved words match “${escapeHtml(query)}”.
+            </p>
+          `;
+          return;
+        }
+
+        dom.drawerList.innerHTML = filtered.map((item) => {
+          const meta = [item.phonetic, item.partOfSpeech].filter(Boolean).join(' · ');
+          return `
+            <article class="bg-card border border-borderWarm rounded-2xl p-4 shadow-card hover:border-borderStrong">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <h3 class="font-serif text-[21px] font-semibold text-ink leading-tight truncate">
+                    ${escapeHtml(item.word)}
+                  </h3>
+                  ${meta ? `<p class="text-[12px] text-muted mt-0.5">${escapeHtml(meta)}</p>` : ''}
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    data-drawer-audio="${escapeHtml(item.word)}"
+                    class="w-8 h-8 rounded-full bg-beige hover:bg-beigeHover text-ink flex items-center justify-center cursor-pointer"
+                    aria-label="Listen to ${escapeHtml(item.word)}"
+                    title="Listen"
+                  >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    data-drawer-remove="${escapeHtml(item.word)}"
+                    class="w-8 h-8 rounded-full hover:bg-beige text-muted hover:text-terracotta flex items-center justify-center cursor-pointer"
+                    aria-label="Remove ${escapeHtml(item.word)}"
+                    title="Remove"
+                  >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 6 6 18"></path>
+                      <path d="m6 6 12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <p class="mt-2.5 text-[13.5px] leading-[1.55] text-ink">
+                ${escapeHtml(item.definition)}
+              </p>
+
+              ${item.example ? `
+                <p class="mt-2 pl-2.5 border-l-2 border-quoteBorder text-[12.5px] italic text-secondary">
+                  ${escapeHtml(item.example)}
+                </p>
+              ` : ''}
+
+              <div class="mt-3 pt-2.5 border-t border-borderSoft flex items-center justify-between gap-2">
+                <div class="flex flex-wrap gap-1 min-w-0">
+                  ${(item.synonyms || []).slice(0, 3).map((s) => `
+                    <span class="bg-beige text-pillText border border-borderWarm/50 text-[11px] px-2 py-0.5 rounded-full">
+                      ${escapeHtml(s)}
+                    </span>
+                  `).join('')}
+                </div>
+                <button
+                  type="button"
+                  data-drawer-full="${escapeHtml(item.word)}"
+                  class="text-[12px] font-medium text-terracotta hover:text-terracottaHover underline underline-offset-4 whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Full entry
+                </button>
+              </div>
+            </article>
+          `;
+        }).join('');
+
+        dom.drawerList.querySelectorAll('[data-drawer-audio]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const w = btn.getAttribute('data-drawer-audio');
+            const entry = state.savedWords.find((i) => i.word === w);
+            if (entry) playPronunciation(entry, btn);
+          });
+        });
+
+        dom.drawerList.querySelectorAll('[data-drawer-remove]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const w = btn.getAttribute('data-drawer-remove');
+            const entry = state.savedWords.find((i) => i.word === w);
+            if (entry) toggleSaveWord(entry);
+          });
+        });
+
+        dom.drawerList.querySelectorAll('[data-drawer-full]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const w = btn.getAttribute('data-drawer-full');
+            const entry = state.savedWords.find((i) => i.word === w);
+            if (entry) openFullEntryModal(entry);
+          });
+        });
+      }
+
+      // =========================================================================
+      // 11. EVENT LISTENERS & INITIALIZATION
+      // =========================================================================
+
+      // Dark mode toggle button
+      dom.themeToggleBtn.addEventListener('click', () => {
+        const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+        applyTheme(nextTheme, true);
+      });
+
+      // "Make it clickable" button
+      dom.makeClickableBtn.addEventListener('click', () => {
+        const text = dom.paragraphInput.value;
+        renderClickableParagraph(text);
+        if (text.trim()) {
+          showToast('Ready — tap any word to see its meaning');
+        }
+      });
+
+      // Cmd/Ctrl + Enter shortcut in textarea
+      dom.paragraphInput.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          renderClickableParagraph(dom.paragraphInput.value);
+          if (dom.paragraphInput.value.trim()) {
+            showToast('Ready — tap any word to see its meaning');
+          }
+        }
+      });
+
+      // Sample switcher
+      dom.loadSampleBtn.addEventListener('click', () => {
+        sampleIndex = (sampleIndex + 1) % SAMPLE_PARAGRAPHS.length;
+        dom.paragraphInput.value = SAMPLE_PARAGRAPHS[sampleIndex];
+        renderClickableParagraph(dom.paragraphInput.value);
+      });
+
+      // Clear input
+      dom.clearInputBtn.addEventListener('click', () => {
+        dom.paragraphInput.value = '';
+        dom.paragraphInput.focus();
+        renderClickableParagraph('');
+      });
+
+      // Full Entry modal controls
+      dom.closeModalBtn.addEventListener('click', closeFullEntryModal);
+      dom.modalAudioBtn.addEventListener('click', () => {
+        if (state.modalEntry) playPronunciation(state.modalEntry, dom.modalAudioBtn);
+      });
+      dom.modalSaveBtn.addEventListener('click', () => {
+        if (state.modalEntry) {
+          toggleSaveWord(state.modalEntry);
+          if (state.currentEntry && normalizeWord(state.currentEntry.word) === normalizeWord(state.modalEntry.word)) {
+            renderPopoverEntry(state.currentEntry, normalizeWord(state.activeWordOriginal) !== normalizeWord(state.currentEntry.word));
+          }
+        }
+      });
+      dom.fullEntryModal.addEventListener('click', (e) => {
+        if (e.target === dom.fullEntryModal) {
+          closeFullEntryModal();
+        }
+      });
+
+      // Saved words drawer controls
+      dom.openSavedBtn.addEventListener('click', openSavedDrawer);
+      dom.closeDrawerBtn.addEventListener('click', closeSavedDrawer);
+      dom.savedDrawerBackdrop.addEventListener('click', (e) => {
+        if (e.target === dom.savedDrawerBackdrop) {
+          closeSavedDrawer();
+        }
+      });
+      dom.drawerSearchInput.addEventListener('input', renderSavedDrawerList);
+
+      // Two-step inline "Clear all" confirmation (never uses confirm/alert)
+      dom.drawerClearAllBtn.addEventListener('click', () => {
+        if (!state.clearConfirmActive) {
+          state.clearConfirmActive = true;
+          dom.drawerClearAllBtn.textContent = 'Confirm clear?';
+          dom.drawerClearAllBtn.classList.remove('text-muted', 'hover:text-terracotta', 'hover:bg-beige');
+          dom.drawerClearAllBtn.classList.add('bg-terracotta', 'text-onTerracotta', 'hover:bg-terracottaHover', 'hover:text-onTerracotta');
+          state.clearConfirmTimer = setTimeout(resetClearConfirmState, 3500);
+        } else {
+          state.savedWords = [];
+          persistSavedWords();
+          resetClearConfirmState();
+          renderSavedDrawerList();
+          showToast('Cleared all saved words');
+        }
+      });
+
+      // Click outside popover closes it
+      document.addEventListener('click', (e) => {
+        if (dom.popover.classList.contains('hidden')) return;
+        if (
+          dom.popover.contains(e.target) ||
+          dom.fullEntryModal.contains(e.target) ||
+          (e.target.closest && e.target.closest('.word-token'))
+        ) {
+          return;
+        }
+        closePopover();
+      });
+
+      // Escape key closes top-most overlay cleanly
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!dom.fullEntryModal.classList.contains('hidden')) {
+          closeFullEntryModal();
+        } else if (!dom.savedDrawerBackdrop.classList.contains('hidden')) {
+          closeSavedDrawer();
+        } else if (!dom.popover.classList.contains('hidden')) {
+          closePopover();
+        }
+      });
+
+      // Keep floating popover aligned on viewport resize
+      window.addEventListener('resize', () => {
+        if (state.activeWordEl && !dom.popover.classList.contains('hidden')) {
+          positionPopover(state.activeWordEl);
+        }
+      });
+
+      // Boot application on load
+      initTheme();
+      loadSavedWords();
+      renderClickableParagraph(dom.paragraphInput.value);
+    })();
+  </script>
+</body>
+</html>
